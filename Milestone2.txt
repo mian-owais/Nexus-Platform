@@ -1,0 +1,530 @@
+================================================================================
+MILESTONE 2: USER AUTHENTICATION & PROFILES
+================================================================================
+Project: Nexus – Investor & Entrepreneur Collaboration Platform
+Date: 2026-04-14
+Status: Backend Setup Complete
+
+================================================================================
+PROJECT OVERVIEW
+================================================================================
+This milestone implements a complete JWT-based authentication system with
+role-based access control and user profile management integrated with MongoDB.
+
+Technology Stack:
+- Backend Framework: Node.js + Express (TypeScript)
+- Database: MongoDB with Mongoose ODM
+- Authentication: JWT (JSON Web Tokens)
+- Password Security: bcryptjs (10 salt rounds)
+- Input Validation: express-validator
+- Environment Management: dotenv
+- Middleware: CORS, express.json, express.urlencoded
+
+================================================================================
+DELIVERABLE 1: GITHUB REPO WITH BACKEND SETUP
+================================================================================
+
+Location: /backend directory in repository
+Remote: https://github.com/mian-owais/Nexus-Platform.git
+
+Project Structure:
+```
+backend/
+├── src/
+│   ├── config/
+│   │   └── database.ts          # MongoDB connection configuration
+│   ├── models/
+│   │   ├── User.ts              # User schema and authentication methods
+│   │   ├── EntrepreneurProfile.ts # Entrepreneur profile schema
+│   │   └── InvestorProfile.ts   # Investor profile schema
+│   ├── middleware/
+│   │   └── auth.ts              # JWT auth and role authorization
+│   ├── controllers/
+│   │   ├── authController.ts    # Authentication logic
+│   │   └── userController.ts    # User profile management logic
+│   ├── routes/
+│   │   ├── authRoutes.ts        # Auth API endpoints
+│   │   └── userRoutes.ts        # User API endpoints
+│   ├── utils/
+│   │   └── jwt.ts               # JWT token generation and verification
+│   └── server.ts                # Main Express server
+├── package.json                 # Dependencies and scripts
+├── tsconfig.json                # TypeScript configuration
+├── .env.example                 # Environment variables template
+├── .env.local                   # Local dev environment (not committed)
+├── .gitignore                   # Git ignore rules
+├── .eslintrc                    # ESLint configuration
+├── .prettierrc                  # Code formatting rules
+└── README.md                    # Backend documentation
+```
+
+Key Features:
+✓ TypeScript for type safety
+✓ Express server with middleware stack
+✓ MongoDB Atlas/Local support
+✓ Async/await throughout
+✓ Comprehensive error handling
+✓ Input validation with express-validator
+✓ Logging and request tracking
+
+================================================================================
+DELIVERABLE 2: FUNCTIONAL AUTHENTICATION SYSTEM
+================================================================================
+
+2.1 USER MODEL (Database Schema)
+───────────────────────────────
+
+File: backend/src/models/User.ts
+
+Fields:
+- _id: ObjectId (auto)
+- name: String (required, 2-100 chars)
+- email: String (required, unique, validated)
+- password: String (required, hashed, min 8 chars)
+- role: String (enum: 'entrepreneur' | 'investor')
+- avatarUrl: String (optional, auto-generated from name)
+- bio: String (optional, max 500 chars)
+- isOnline: Boolean (default: true)
+- createdAt: Date (auto)
+- updatedAt: Date (auto)
+
+Methods:
+- comparePassword(candidatePassword): Promise<boolean>
+  Securely compares candidate password with hashed password
+- toJSON(): Object
+  Excludes password from JSON serialization
+
+Indexes:
+- email: unique
+- createdAt: for sorting
+
+---
+
+2.2 AUTHENTICATION FLOW
+─────────────────────────────────
+
+File: backend/src/controllers/authController.ts
+
+A. REGISTRATION (POST /api/auth/register)
+   ─────────────────────────────────────
+
+Request Payload:
+{
+  "name": "string (required, 2-100 chars)",
+  "email": "string (required, unique email)",
+  "password": "string (required, min 8 chars)",
+  "role": "entrepreneur | investor (required)"
+}
+
+Process:
+1. Validate input using express-validator
+2. Check if email already exists
+3. Create new User document
+4. Hash password with bcryptjs (10 rounds)
+5. Save user to MongoDB
+6. Create role-specific profile (EntrepreneurProfile or InvestorProfile)
+7. Generate JWT access token (expires in 7 days)
+8. Generate refresh token (expires in 30 days)
+9. Return user data with tokens
+
+Response (201 Created):
+{
+  "success": true,
+  "message": "User registered successfully",
+  "data": {
+    "user": {
+      "id": "ObjectId",
+      "name": "John Doe",
+      "email": "john@example.com",
+      "role": "entrepreneur",
+      "avatarUrl": "https://ui-avatars.com/api/?name=John+Doe",
+      "bio": "",
+      "isOnline": true,
+      "createdAt": "2026-04-14T10:00:00Z"
+    },
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+
+Error Responses:
+- 400: Validation error
+- 409: Email already in use
+
+---
+
+B. LOGIN (POST /api/auth/login)
+   ───────────────────────────────
+
+Request Payload:
+{
+  "email": "string (required)",
+  "password": "string (required)",
+  "role": "entrepreneur | investor (required)"
+}
+
+Process:
+1. Validate input
+2. Find user by email and role
+3. Include password field in query
+4. Compare provided password with stored hash
+5. Update user's isOnline status to true
+6. Generate JWT token
+7. Generate refresh token
+8. Return tokens and user data
+
+Response (200 OK):
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": { /* same as registration */ },
+    "token": "JWT token",
+    "refreshToken": "Refresh token"
+  }
+}
+
+Error Responses:
+- 401: Invalid credentials
+- 500: Server error
+
+Security Features:
+✓ Bcryptjs with 10 salt rounds
+✓ Passwords never returned in responses
+✓ JWT signed with secret key
+✓ Role verification on login
+✓ Token expiration enforced
+
+---
+
+C. LOGOUT (POST /api/auth/logout)
+   ─────────────────────────────────
+
+Headers Required:
+Authorization: Bearer {JWT_TOKEN}
+
+Process:
+1. Verify JWT token from Authorization header
+2. Extract userId from token
+3. Find user by userId
+4. Set isOnline to false
+5. Save changes
+
+Response (200 OK):
+{
+  "success": true,
+  "message": "Logout successful"
+}
+
+---
+
+D. TOKEN REFRESH (POST /api/auth/refresh-token)
+   ──────────────────────────────────────────────
+
+Request Payload:
+{
+  "refreshToken": "string (refresh token from login)"
+}
+
+Process:
+1. Verify refresh token signature
+2. Extract userId from token
+3. Verify user exists
+4. Generate new access token
+5. Return new token
+
+Response (200 OK):
+{
+  "success": true,
+  "message": "New access token generated",
+  "data": {
+    "token": "new JWT token"
+  }
+}
+
+---
+
+2.3 JWT TOKEN STRUCTURE
+────────────────────────
+
+File: backend/src/utils/jwt.ts
+
+Access Token (expires in 7 days):
+{
+  "userId": "ObjectId",
+  "role": "entrepreneur | investor",
+  "iat": 1713091200,
+  "exp": 1713696000
+}
+
+Refresh Token (expires in 30 days):
+{
+  "userId": "ObjectId",
+  "iat": 1713091200,
+  "exp": 1715683200
+}
+
+Token Generation:
+- Algorithm: HS256 (HMAC with SHA-256)
+- Secret Key: From environment variable JWT_SECRET
+- Stored in Authorization header as: Bearer {token}
+
+Token Verification Middleware:
+- Extracts token from Authorization header
+- Verifies signature with secret
+- Checks expiration
+- Returns decoded payload with userId and role
+- Rejects invalid/expired tokens with 401 status
+
+================================================================================
+DELIVERABLE 3: PROFILES STORED/RETRIEVED FROM DATABASE
+================================================================================
+
+3.1 ENTREPRENEUR PROFILE MODEL
+──────────────────────────────
+
+File: backend/src/models/EntrepreneurProfile.ts
+
+Schema Fields:
+{
+  userId: ObjectId (ref: User, unique),
+  startupName: String (required),
+  pitchSummary: String (required, max 1000),
+  fundingNeeded: String (required),
+  industry: String (required),
+  location: String (required),
+  foundedYear: Number (required, 1900-current),
+  teamSize: Number (required, min 1),
+  website: String (optional),
+  socialLinks: {
+    linkedin: String,
+    twitter: String,
+    github: String
+  },
+  createdAt: Date,
+  updatedAt: Date
+}
+
+Automatic Creation:
+- Created during user registration for role === 'entrepreneur'
+- Pre-populated with empty/default values
+- userId linked to parent User document
+
+---
+
+3.2 INVESTOR PROFILE MODEL
+───────────────────────────
+
+File: backend/src/models/InvestorProfile.ts
+
+Schema Fields:
+{
+  userId: ObjectId (ref: User, unique),
+  investmentInterests: String[] (required, min 1),
+  investmentStage: String[] (enum: seed|series_a|series_b|series_c|growth|exit),
+  portfolioCompanies: String[] (default: []),
+  totalInvestments: Number (default: 0),
+  minimumInvestment: String (required),
+  maximumInvestment: String (required),
+  yearsOfExperience: Number (optional, 0-70),
+  company: String (optional),
+  createdAt: Date,
+  updatedAt: Date
+}
+
+Automatic Creation:
+- Created during user registration for role === 'investor'
+- Pre-populated with defaults
+- Arrays must have at minimum one element
+
+---
+
+3.3 API ENDPOINTS FOR PROFILE MANAGEMENT
+──────────────────────────────────────────
+
+File: backend/src/routes/userRoutes.ts
+
+API Endpoints:
+
+1. GET /api/users/:userId - Get user profile with role-specific data
+2. PUT /api/users/:userId - Update user general profile
+3. PUT /api/profile/entrepreneur/:entrepreneurId - Update entrepreneur profile
+4. PUT /api/profile/investor/:investorId - Update investor profile  
+5. GET /api/users/list/entrepreneurs - Get all entrepreneurs with filtering
+6. GET /api/users/list/investors - Get all investors with filtering
+
+All endpoints require Authorization header with valid JWT token.
+
+================================================================================
+SECURITY IMPLEMENTATION
+================================================================================
+
+4.1 PASSWORD SECURITY
+──────────────────────
+✓ Minimum 8 characters required
+✓ Bcryptjs hashing with 10 salt rounds
+✓ Never stored or transmitted in plain text
+✓ Never returned in API responses
+✓ Secure comparison method (timing attack resistant)
+
+---
+
+4.2 JWT TOKEN SECURITY
+───────────────────────
+✓ Signed with secret key (HS256 algorithm)
+✓ Token contains minimal information (userId, role)
+✓ Expiration enforced (7 days for access, 30 days for refresh)
+✓ Signature verification on every protected request
+✓ Environment variable for secret (never in code)
+
+---
+
+4.3 ROLE-BASED ACCESS CONTROL (RBAC)
+──────────────────────────────────────
+
+Middleware: backend/src/middleware/auth.ts
+
+authenticate() middleware:
+- Extracts JWT from Authorization header
+- Verifies signature
+- Decodes user info
+- Attaches user to request object
+
+authorize(roles) middleware:
+- Checks if user role is in allowed roles
+- Returns 403 Forbidden if not authorized
+
+Profile Ownership Verification:
+- User can only update their own profile
+- Update endpoints verify userId matches token
+
+================================================================================
+ENVIRONMENTAL CONFIGURATION
+================================================================================
+
+5.1 REQUIRED ENVIRONMENT VARIABLES
+────────────────────────────────────
+
+Development (.env.local):
+NODE_ENV=development
+PORT=5000
+API_URL=http://localhost:5000
+MONGODB_URI=mongodb://localhost:27017/nexus
+JWT_SECRET=nexus_super_secret_jwt_key_development
+JWT_EXPIRE=7d
+JWT_REFRESH_SECRET=nexus_refresh_secret_development
+JWT_REFRESH_EXPIRE=30d
+CORS_ORIGIN=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
+
+Production:
+- Configure on deployment platform
+- Use strong random JWT secrets
+- MongoDB Atlas connection string
+- Frontend domain in CORS_ORIGIN
+
+================================================================================
+INSTALLATION & SETUP INSTRUCTIONS
+================================================================================
+
+6.1 PREREQUISITES
+──────────────────
+- Node.js >= 18.0.0
+- npm or yarn
+- MongoDB (local or MongoDB Atlas)
+
+---
+
+6.2 SETUP BACKEND
+──────────────────
+
+1. Navigate to backend folder:
+   cd backend
+
+2. Install dependencies:
+   npm install
+
+3. Create .env.local from .env.example
+
+4. Configure MongoDB URI (local or Atlas)
+
+5. Start development server:
+   npm run dev
+
+Server will be available at http://localhost:5000
+
+---
+
+6.3 BUILD FOR PRODUCTION
+──────────────────────────
+
+1. Compile TypeScript:
+   npm run build
+
+2. Start production server:
+   npm start
+
+================================================================================
+SCRIPTS AVAILABLE
+================================================================================
+
+- npm run dev              # Start development server with nodemon
+- npm start               # Start production server
+- npm run build           # Compile TypeScript to JavaScript  
+- npm test                # Run tests
+- npm run lint            # Check code style
+- npm run format          # Format code with Prettier
+
+================================================================================
+ERROR HANDLING
+================================================================================
+
+Standard Error Response Format:
+
+{
+  "success": false,
+  "message": "User-friendly error message",
+  "error": "Detailed error (development only)",
+  "errors": [{ "field": "email", "message": "Invalid" }]
+}
+
+Status Codes:
+- 201: Created (registration success)
+- 200: OK (login/update success)
+- 400: Validation error
+- 401: Not authenticated
+- 403: Not authorized
+- 404: Not found
+- 409: Conflict (duplicate email)
+- 500: Server error
+
+================================================================================
+GIT REPOSITORY
+================================================================================
+
+Repository: https://github.com/mian-owais/Nexus-Platform.git
+Branch: main
+Status: Both frontend (Nexus/) and backend/ directories committed
+
+Files Committed:
+✓ Frontend code (Nexus/)
+✓ Backend code (backend/)
+✓ Milestone1.txt and Milestone2.txt
+
+================================================================================
+NEXT STEPS
+================================================================================
+
+Milestone 3: Connect Frontend to Backend APIs
+- Update AuthContext to use real backend APIs
+- Integrate user profile forms with backend
+- Implement messaging APIs
+- Add collaboration system
+- Create deals management
+- Document processing
+- Notification system
+- Video calling integration
+
+================================================================================
+END OF MILESTONE 2 DOCUMENTATION
+================================================================================
