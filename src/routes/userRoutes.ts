@@ -96,7 +96,7 @@ router.put('/:userId', authenticate, updateUserValidation, updateUserProfile);
  * @access  Private
  */
 router.put(
-  '/profile/entrepreneur/:enterpreneurId',
+  '/profile/entrepreneur/:entrepreneurId',
   authenticate,
   updateEntrepreneurValidation,
   updateEntrepreneurProfile

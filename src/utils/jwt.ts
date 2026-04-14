@@ -17,24 +17,22 @@ export const generateToken = (
   userId: string,
   role: 'entrepreneur' | 'investor'
 ): string => {
-  const options: SignOptions & { expiresIn: string | number } = {
-    expiresIn: (process.env.JWT_EXPIRE || '7d') as string,
-  };
   return jwt.sign(
     { userId, role },
     getJwtSecret(),
-    options as SignOptions
+    {
+      expiresIn: (process.env.JWT_EXPIRE || '7d') as any,
+    }
   );
 };
 
 export const generateRefreshToken = (userId: string): string => {
-  const options: SignOptions & { expiresIn: string | number } = {
-    expiresIn: (process.env.JWT_REFRESH_EXPIRE || '30d') as string,
-  };
   return jwt.sign(
     { userId },
     getRefreshSecret(),
-    options as SignOptions
+    {
+      expiresIn: (process.env.JWT_REFRESH_EXPIRE || '30d') as any,
+    }
   );
 };
 
