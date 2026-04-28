@@ -3,7 +3,7 @@ import { validationResult } from 'express-validator';
 import { User } from '../models/User';
 import { EntrepreneurProfile } from '../models/EntrepreneurProfile';
 import { InvestorProfile } from '../models/InvestorProfile';
-import { generateToken, generateRefreshToken } from '../utils/jwt';
+import { generateToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { AuthenticatedRequest } from '../middleware/auth';
 
 export const register = async (
@@ -226,8 +226,17 @@ export const refreshAccessToken = async (
       return;
     }
 
-    // Verify refresh token and get user
-    const user = await User.findById(refreshToken);
+    // Verify refresh token and extract user id
+    const decoded = verifyRefreshToken(refreshToken) as { userId?: string };
+    if (!decoded?.userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid refresh token',
+      });
+      return;
+    }
+
+    const user = await User.findById(decoded.userId);
     if (!user) {
       res.status(401).json({
         success: false,

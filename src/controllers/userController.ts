@@ -118,11 +118,11 @@ export const updateEntrepreneurProfile = async (
       return;
     }
 
-    const { enterpreneurId } = req.params;
+    const { entrepreneurId } = req.params;
     const { startupName, pitchSummary, fundingNeeded, industry, location, foundedYear, teamSize } = req.body;
 
     // Verify user is updating their own profile
-    const profile = await EntrepreneurProfile.findById(enterpreneurId);
+    const profile = await EntrepreneurProfile.findById(entrepreneurId);
     if (!profile || profile.userId.toString() !== req.user?.userId) {
       res.status(403).json({
         success: false,
@@ -132,7 +132,7 @@ export const updateEntrepreneurProfile = async (
     }
 
     const updatedProfile = await EntrepreneurProfile.findByIdAndUpdate(
-      enterpreneurId,
+      entrepreneurId,
       {
         startupName,
         pitchSummary,

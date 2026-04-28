@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "description": "Backend for Nexus - Investor & Entrepreneur Collaboration Platform",
   "main": "src/server.js",
-  "type": "module",
   "scripts": {
     "start": "node dist/server.js",
-    "dev": "nodemon src/server.js",
-    "build": "tsc",
+    "dev": "nodemon src/server.ts --exec ts-node",
+    "build": "tsc -p tsconfig.backend.json",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts,.tsx",
@@ -37,6 +36,7 @@
     "nodemon": "^3.0.2",
     "prettier": "^3.1.1",
     "ts-jest": "^29.1.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.5.3"
   },
   "engines": {

@@ -29,28 +29,28 @@ const entrepreneurProfileSchema = new mongoose.Schema(
     },
     startupName: {
       type: String,
-      required: [true, 'Please provide startup name'],
+      default: '',
       trim: true,
       maxlength: 100,
     },
     pitchSummary: {
       type: String,
-      required: [true, 'Please provide a pitch summary'],
+      default: '',
       maxlength: 1000,
     },
     fundingNeeded: {
       type: String,
-      required: [true, 'Please specify funding needed'],
+      default: '',
       trim: true,
     },
     industry: {
       type: String,
-      required: [true, 'Please specify industry'],
+      default: '',
       trim: true,
     },
     location: {
       type: String,
-      required: [true, 'Please provide location'],
+      default: '',
       trim: true,
     },
     foundedYear: {

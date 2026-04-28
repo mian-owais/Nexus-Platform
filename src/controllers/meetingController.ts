@@ -107,7 +107,7 @@ export const scheduleMeeting = async (
     }
 
     // Create participant response array with pending status
-    const participantResponses = participantIds.map(id => ({
+    const participantResponses = participantIds.map((id: string) => ({
       userId: id,
       response: 'pending',
     }));
