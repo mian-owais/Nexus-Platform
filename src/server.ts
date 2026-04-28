@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './config/database';
@@ -8,7 +8,7 @@ import meetingRoutes from './routes/meetingRoutes';
 
 dotenv.config();
 
-const app: Express = express();
+const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
@@ -25,13 +25,13 @@ app.use(
 );
 
 // Request logging middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req: any, res: any, next: any) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
   next();
 });
 
 // Health check endpoint
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/api/health', (req: any, res: any) => {
   res.json({
     success: true,
     message: 'Nexus Backend is running',
@@ -39,13 +39,21 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
+// Root route - quick status and pointer to API
+app.get('/', (req: any, res: any) => {
+  res.json({
+    success: true,
+    message: 'Nexus Backend is running. See API at /api',
+    api: '/api',
+  });
+});
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/meetings', meetingRoutes);
 
 // 404 handler
-app.use((req: Request, res: Response) => {
+app.use((req: any, res: any) => {
   res.status(404).json({
     success: false,
     message: `Route ${req.path} not found`,
@@ -54,7 +62,7 @@ app.use((req: Request, res: Response) => {
 
 // Error handling middleware
 app.use(
-  (err: Error, req: Request, res: Response, next: NextFunction) => {
+  (err: any, req: any, res: any, next: any) => {
     console.error('Error:', err.message);
     res.status(500).json({
       success: false,

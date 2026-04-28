@@ -20,6 +20,8 @@ Backend API for the Nexus platform - Investor & Entrepreneur Collaboration Platf
 - npm or yarn
 - MongoDB (local or MongoDB Atlas)
 
+Optional: Docker (to run MongoDB locally via docker-compose)
+
 ## Installation
 
 1. Clone the repository:
@@ -61,6 +63,14 @@ npm run dev
 ```
 
 The API will be available at `http://localhost:5000`
+
+Run MongoDB with Docker Compose (optional):
+
+```bash
+docker compose up -d
+```
+
+This starts MongoDB on `mongodb://localhost:27017` using `docker-compose.yml`.
 
 ## Building
 
