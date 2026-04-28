@@ -77,20 +77,6 @@ const updateInvestorValidation = [
 ];
 
 /**
- * @route   GET /api/users/:userId
- * @desc    Get user profile with role-specific data
- * @access  Private
- */
-router.get('/:userId', authenticate, getUserProfile);
-
-/**
- * @route   PUT /api/users/:userId
- * @desc    Update user general profile
- * @access  Private
- */
-router.put('/:userId', authenticate, updateUserValidation, updateUserProfile);
-
-/**
  * @route   PUT /api/profile/entrepreneur/:entrepreneurId
  * @desc    Update entrepreneur profile
  * @access  Private
@@ -127,5 +113,19 @@ router.get('/list/entrepreneurs', authenticate, getAllEntrepreneurs);
  * @access  Private
  */
 router.get('/list/investors', authenticate, getAllInvestors);
+
+/**
+ * @route   GET /api/users/:userId
+ * @desc    Get user profile with role-specific data
+ * @access  Private
+ */
+router.get('/:userId', authenticate, getUserProfile);
+
+/**
+ * @route   PUT /api/users/:userId
+ * @desc    Update user general profile
+ * @access  Private
+ */
+router.put('/:userId', authenticate, updateUserValidation, updateUserProfile);
 
 export default router;

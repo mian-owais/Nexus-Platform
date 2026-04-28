@@ -25,23 +25,11 @@ const investorProfileSchema = new mongoose.Schema(
     investmentInterests: {
       type: [String],
       default: [],
-      validate: {
-        validator: function (v: string[]) {
-          return Array.isArray(v) && v.length > 0;
-        },
-        message: 'Please specify at least one investment interest',
-      },
     },
     investmentStage: {
       type: [String],
       enum: ['seed', 'series_a', 'series_b', 'series_c', 'growth', 'exit'],
       default: [],
-      validate: {
-        validator: function (v: string[]) {
-          return Array.isArray(v) && v.length > 0;
-        },
-        message: 'Please select at least one investment stage',
-      },
     },
     portfolioCompanies: {
       type: [String],
@@ -54,12 +42,12 @@ const investorProfileSchema = new mongoose.Schema(
     },
     minimumInvestment: {
       type: String,
-      required: [true, 'Please specify minimum investment amount'],
+      default: '',
       trim: true,
     },
     maximumInvestment: {
       type: String,
-      required: [true, 'Please specify maximum investment amount'],
+      default: '',
       trim: true,
     },
     yearsOfExperience: {
